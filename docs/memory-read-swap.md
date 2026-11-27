@@ -1,4 +1,29 @@
-# Resident and swap-backed memory reads
+# Resident, swap-backed and read-only file metadata reads
+
+## Reclaimed file metadata
+
+Small reads (at most 4096 bytes) that fail with EFAULT now also try the exact
+backing file of a readable shared regular-file mapping. This covers reclaimed
+file pages with no swap entry, including class-name metadata needed by minimap
+readers. The mapping must not be writable or potentially writable; private/COW,
+anonymous, device and cross-VMA ranges are not eligible. A successful ordinary
+memory read is never replaced by file contents. Swap errors are not retried as
+file reads.
+
+The driver pins vm_file, releases target locks before kernel_read, preserves
+the file's original opening credentials and normal VFS/LSM checks, and uses a
+private file position. It rechecks the mapping, offset and file size before
+copying the complete result out. There is no procfs/map_files reopen, target
+fault-in, PTE installation or new ioctl. Existing SDK READ and READ_CACHE calls
+and the kernel-buffer reader use the same fallback. Concurrent external file
+writes remain possible; this is not an atomic snapshot.
+
+This adapts Qdrive's read-only mapped-file route. Its source policy is retained,
+but small ordinary reads select it automatically so existing clients do not
+need a new ABI. It does not establish that an unobserved minimap failure was
+caused by swapped or reclaimed file pages.
+
+## Resident and swap backend
 
 MEM_IOC_READ, MEM_IOC_READ_CACHE and the in-kernel mem_read_ctx_read path now
 share a bounded page-sized reader. The old unlocked physical walker returned

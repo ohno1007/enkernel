@@ -9,6 +9,11 @@ Changes: DFM RAM-alias lifetime integration, full-range/error semantics, explici
 swap-only dispatch, kernel-buffer entry, and DFM-specific fault-injection tests.
 No Qdrive SDK, root identity changes, or write-path changes are imported.
 
+mem_file_read.h additionally adapts memory_access/readonly_file.h from the
+user-supplied Qdrive tree: small immutable shared-file reads, pinned-file I/O
+and mapping revalidation. DFM selects this route after an ordinary small read
+fails with EFAULT and uses the existing target-fd query's opening credentials.
+
 Reference SHA-256:
 
 - hwBreakpointProc_module/memory_access/backing_read.h: a8c1fe8ecd5c8f1da73af7635ba9ef1cf5b1a9e7275dee2908df98b0dbd6b6bd

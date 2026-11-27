@@ -1058,6 +1058,7 @@ static int create_linearmap(void)
 
 /* Locked resident RAM copies plus swap-cache backing reads. */
 #include "mem_read_backend.h"
+#include "mem_file_read.h"
 
 static long access_remote_vm_read(pid_t pid, unsigned long address,
                                   void __user *buffer, size_t count, bool clean)
@@ -1069,7 +1070,7 @@ static long access_remote_vm_read(pid_t pid, unsigned long address,
     mm = get_task_mm(task);
     put_task_struct(task);
     if (!mm) return -ESRCH;
-    result = mem_copy_range(mm, address, (void *)buffer, count, true, clean);
+    result = mem_read_range(mm, address, (void *)buffer, count, true, clean);
     mmput(mm);
     return result;
 }
@@ -1131,7 +1132,7 @@ long mem_read_ctx_read(struct mem_read_ctx *ctx, uint64_t addr,
     if (size == 0 || size > (4 * 1024 * 1024))
         return -EINVAL;
 
-    ret = mem_copy_range(ctx->mm, (unsigned long)addr, buf, size, false, false);
+    ret = mem_read_range(ctx->mm, (unsigned long)addr, buf, size, false, false);
     return ret;
 }
 
